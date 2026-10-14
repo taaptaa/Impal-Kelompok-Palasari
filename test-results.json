@@ -1,0 +1,12 @@
+{
+  "checks": [
+    "Username kosong tidak masuk ke langkah password",
+    "Login demo berhasil",
+    "Katalog menampilkan 6 barang",
+    "Pencarian Proyektor menghasilkan 1 barang",
+    "Tanggal kembali sama dengan tanggal pinjam ditolak",
+    "Pengajuan muncul di riwayat sebagai LR008",
+    "Tidak ada error JavaScript halaman"
+  ],
+  "pageErrors": []
+}
