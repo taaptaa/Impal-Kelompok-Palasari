@@ -1,6 +1,11 @@
-# Impal-Kelompok-Palasari
-# Arfan Ramiro Mahzar 103012400182
-# Fikri Fathurohman 103012400212
-# Naufal Edgina Apta Aisy 103012400294
-# Achmad Fadillah Muchson 103012400309
 
+  # SmartLend Inventory Loan System Website
+
+  This is a code bundle for SmartLend Inventory Loan System Website. The original project is available at https://www.figma.com/design/myW28RLuyQZMbBMsZzaDND/SmartLend-Inventory-Loan-System-Website.
+
+  ## Running the code
+
+  Run `npm i` to install the dependencies.
+
+  Run `npm run dev` to start the development server.
+  
