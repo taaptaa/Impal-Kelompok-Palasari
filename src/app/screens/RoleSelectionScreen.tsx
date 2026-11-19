@@ -4,9 +4,10 @@ import telkomBg from 'figma:asset/0e86c95630b818072ace687907edb996034e5029.png';
 
 interface RoleSelectionScreenProps {
   onSelectRole: (role: 'student' | 'admin' | 'warehouse', action: 'login' | 'register') => void;
+  onBrowse: () => void;
 }
 
-export function RoleSelectionScreen({ onSelectRole }: RoleSelectionScreenProps) {
+export function RoleSelectionScreen({ onSelectRole, onBrowse }: RoleSelectionScreenProps) {
   const roles = [
     {
       id: 'student' as const,
@@ -86,10 +87,13 @@ export function RoleSelectionScreen({ onSelectRole }: RoleSelectionScreenProps) 
           Masuk Sebagai
         </h2>
         <p className="text-sm text-center mb-6" style={{ color: '#64748B' }}>
-          Pilih peran Anda untuk melanjutkan
+          Pilih peran internal, atau jelajahi katalog tanpa akun
         </p>
 
         <div className="space-y-3 max-w-[900px] mx-auto">
+          <button type="button" onClick={onBrowse} className="w-full bg-white rounded-2xl p-6 shadow-sm text-left font-bold text-[#BE1E2D] hover:shadow-md focus-visible:outline-2 focus-visible:outline-[#BE1E2D]">
+            Lihat Katalog & Keranjang (tanpa login)
+          </button>
           {roles.map((role) => {
             const Icon = role.icon;
             return (

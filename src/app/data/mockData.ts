@@ -5,7 +5,6 @@ export const mockUsers = [
   {
     id: 'STD001',
     name: 'Ahmad Rizki',
-    password: 'student123',
     email: 'ahmad.rizki@student.telkomuniversity.ac.id',
     role: 'student' as const,
     avatar: 'https://ui-avatars.com/api/?name=Ahmad+Rizki&background=2563EB&color=fff'
@@ -13,7 +12,6 @@ export const mockUsers = [
   {
     id: 'STD002',
     name: 'Siti Nurhaliza',
-    password: 'student123',
     email: 'siti.nur@student.telkomuniversity.ac.id',
     role: 'student' as const,
     avatar: 'https://ui-avatars.com/api/?name=Siti+Nurhaliza&background=2563EB&color=fff'
@@ -21,7 +19,6 @@ export const mockUsers = [
   {
     id: 'ADM001',
     name: 'Admin Utama',
-    password: 'admin123',
     email: 'admin@smartlend.telkomuniversity.ac.id',
     role: 'admin' as const,
     avatar: 'https://ui-avatars.com/api/?name=Admin+Utama&background=10B981&color=fff'
@@ -29,7 +26,6 @@ export const mockUsers = [
   {
     id: 'WRH001',
     name: 'Petugas Gudang',
-    password: 'warehouse123',
     email: 'warehouse@smartlend.telkomuniversity.ac.id',
     role: 'warehouse' as const,
     avatar: 'https://ui-avatars.com/api/?name=Petugas+Gudang&background=F59E0B&color=fff'

@@ -4,6 +4,7 @@ import { LogIn, ArrowLeft, UserCircle, Lock, Shield, Package, Users } from 'luci
 import { toast } from 'sonner';
 import telkomLogo from 'figma:asset/623803f2801f48df421c6a73b102830c97d7f2c1.png';
 import telkomBg from 'figma:asset/0e86c95630b818072ace687907edb996034e5029.png';
+import { login } from '../api';
 
 interface LoginScreenProps {
   onLogin: (user: User) => void;
@@ -50,16 +51,15 @@ export function LoginScreen({ onLogin, selectedRole, onBack }: LoginScreenProps)
   const handleUsernameSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!username.trim()) {
-      toast.error('Mohon masukkan username');
+    if (!username.trim() || !username.includes('@')) {
+      toast.error('Masukkan email akun internal');
       return;
     }
 
     setStep('password');
   };
 
-  // Mode Demo - Input bebas, langsung bisa masuk
-  const handlePasswordSubmit = (e: React.FormEvent) => {
+  const handlePasswordSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!password.trim()) {
@@ -67,37 +67,17 @@ export function LoginScreen({ onLogin, selectedRole, onBack }: LoginScreenProps)
       return;
     }
 
-    // Langsung buat user berdasarkan role tanpa validasi database
-    let user: User;
-    
-    if (selectedRole === 'student') {
-      user = {
-        id: 'STD001',
-        name: username,
-        email: username.includes('@') ? username : `${username}@student.telkomuniversity.ac.id`,
-        role: 'student',
-        avatar: 'https://ui-avatars.com/api/?name=' + encodeURIComponent(username)
-      };
-    } else if (selectedRole === 'admin') {
-      user = {
-        id: 'ADM001',
-        name: username,
-        email: username.includes('@') ? username : `${username}@telkomuniversity.ac.id`,
-        role: 'admin',
-        avatar: 'https://ui-avatars.com/api/?name=' + encodeURIComponent(username)
-      };
-    } else {
-      user = {
-        id: 'WRH001',
-        name: username,
-        email: username.includes('@') ? username : `${username}@telkomuniversity.ac.id`,
-        role: 'warehouse',
-        avatar: 'https://ui-avatars.com/api/?name=' + encodeURIComponent(username)
-      };
+    setIsLoading(true);
+    setError('');
+    try {
+      const user = await login(username.trim(), password, selectedRole);
+      toast.success(`Selamat datang, ${user.name}!`);
+      onLogin(user);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Server tidak dapat dihubungi.');
+    } finally {
+      setIsLoading(false);
     }
-
-    toast.success(`Selamat datang, ${user.name}!`);
-    onLogin(user);
   };
 
   const handleBackToUsername = () => {
@@ -154,7 +134,7 @@ export function LoginScreen({ onLogin, selectedRole, onBack }: LoginScreenProps)
               Login {currentRole.label}
             </h1>
             <p className="text-xs text-white" style={{ opacity: 0.9 }}>
-              {step === 'username' ? 'Masukkan username Anda' : 'Masukkan password Anda'}
+              {step === 'username' ? 'Masukkan email akun internal Anda' : 'Masukkan password Anda'}
             </p>
           </div>
         </div>
@@ -174,7 +154,7 @@ export function LoginScreen({ onLogin, selectedRole, onBack }: LoginScreenProps)
                 }}
               />
               <p className="text-xs mt-2 font-semibold" style={{ color: currentRole.color }}>
-                1. Username
+                1. Email
               </p>
             </div>
             <div className="flex-1">
@@ -199,7 +179,7 @@ export function LoginScreen({ onLogin, selectedRole, onBack }: LoginScreenProps)
             <form onSubmit={handleUsernameSubmit} className="space-y-5">
               <div className="bg-white rounded-2xl p-8 shadow-sm">
                 <label className="block text-sm font-semibold mb-3" style={{ color: '#334155' }}>
-                  Username
+                  Email
                 </label>
                 <div className="relative">
                   <UserCircle
@@ -208,10 +188,12 @@ export function LoginScreen({ onLogin, selectedRole, onBack }: LoginScreenProps)
                     strokeWidth={1.5}
                   />
                   <input
-                    type="text"
+                    type="email"
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
-                    placeholder="Masukkan username"
+                    placeholder="nama@domain.ac.id"
+                    autoComplete="username"
+                    required
                     autoFocus
                     className="w-full pl-12 pr-4 py-4 border-2 border-gray-200 rounded-xl focus:outline-none transition-colors"
                     style={{ fontSize: '16px' }}
@@ -220,15 +202,7 @@ export function LoginScreen({ onLogin, selectedRole, onBack }: LoginScreenProps)
                   />
                 </div>
 
-                {/* Demo Hint dengan contoh username */}
-                <div className="mt-4 p-4 rounded-xl" style={{ backgroundColor: currentRole.bgColor }}>
-                  <p className="text-xs font-semibold mb-1 text-center" style={{ color: currentRole.color }}>
-                    💡 Contoh username:
-                  </p>
-                  <p className="text-xs text-center font-mono" style={{ color: currentRole.color }}>
-                    Ahmad Rizki
-                  </p>
-                </div>
+                <p className="mt-4 text-xs text-slate-600">Gunakan akun yang didaftarkan pengelola.</p>
               </div>
 
               <button
@@ -248,7 +222,7 @@ export function LoginScreen({ onLogin, selectedRole, onBack }: LoginScreenProps)
           {step === 'password' && (
             <form onSubmit={handlePasswordSubmit} className="space-y-5">
               <div className="bg-white rounded-2xl p-8 shadow-sm">
-                {/* Show Username */}
+                {/* Show Email */}
                 <div className="mb-5 p-4 rounded-xl" style={{ backgroundColor: '#F8FAFC' }}>
                   <p className="text-xs mb-1" style={{ color: '#64748B' }}>
                     Login sebagai
@@ -272,6 +246,8 @@ export function LoginScreen({ onLogin, selectedRole, onBack }: LoginScreenProps)
                   />
                   <input
                     type="password"
+                    autoComplete="current-password"
+                    required
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="Masukkan password"
@@ -283,24 +259,17 @@ export function LoginScreen({ onLogin, selectedRole, onBack }: LoginScreenProps)
                   />
                 </div>
 
-                {/* Demo Password Info - sama untuk semua role */}
-                <div className="mt-4 p-4 rounded-xl" style={{ backgroundColor: currentRole.bgColor }}>
-                  <p className="text-xs font-semibold mb-1 text-center" style={{ color: currentRole.color }}>
-                    💡 Contoh password:
-                  </p>
-                  <p className="text-xs text-center font-mono" style={{ color: currentRole.color }}>
-                    12345
-                  </p>
-                </div>
+                {error && <p role="alert" className="mt-4 text-sm text-red-700">{error}</p>}
               </div>
 
               <button
                 type="submit"
+                disabled={isLoading}
                 className="w-full py-4 rounded-xl text-white font-bold flex items-center justify-center gap-2 transition-all hover:opacity-90 shadow-lg"
                 style={{ background: currentRole.gradient }}
               >
                 <LogIn className="w-5 h-5" strokeWidth={2} />
-                <span>Masuk</span>
+                <span>{isLoading ? 'Memeriksa...' : 'Masuk'}</span>
               </button>
             </form>
           )}

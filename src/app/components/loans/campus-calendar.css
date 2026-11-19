@@ -1,0 +1,27 @@
+.sl-calendar { width: 100%; max-width: 360px; min-width: 0; color: #0f172a; }
+.sl-calendar * { transition: none; }
+.sl-calendar-controls { display: flex; align-items: center; gap: 4px; margin-bottom: 12px; }
+.sl-calendar-controls label { min-width: 0; }
+.sl-calendar-controls .sl-calendar-year { flex: 0 1 84px; }
+.sl-calendar-controls select, .sl-calendar-controls input { width: 100%; background: white; border: 1px solid #cbd5e1; border-radius: 8px; min-height: 44px; padding: 4px; font-size: 14px; }
+.sl-calendar-controls input { width: 76px; }
+.sl-calendar-controls button { display: flex; align-items: center; justify-content: center; min-width: 32px; min-height: 44px; border-radius: 8px; }
+.sl-calendar .rdp-caption { display: none; }
+.sl-calendar .rdp-table { width: 100%; table-layout: fixed; border-collapse: collapse; }
+.sl-calendar .rdp-head_cell { font-size: 12px; font-weight: 500; color: #475569; height: 32px; text-align: center; }
+.sl-calendar .rdp-cell { text-align: center; padding: 2px 0; }
+.sl-calendar .rdp-day { display: flex; align-items: center; justify-content: center; position: relative; width: 100%; min-height: 40px; border: 0; background: transparent; border-radius: 8px; font-size: 14px; }
+.sl-calendar .rdp-day:hover:not(:disabled) { background: #f1f5f9; }
+.sl-calendar .rdp-day_today { text-decoration: underline; font-weight: 700; }
+.sl-calendar .rdp-day_outside { color: #64748b; }
+.sl-calendar .rdp-day_selected, .sl-calendar .rdp-day_selected:hover:not(:disabled) { background: #be1e2d; color: white; }
+.sl-calendar .rdp-day_range_middle, .sl-calendar .rdp-day_range_middle:hover:not(:disabled) { background: #fce7e9; color: #881622; border-radius: 0; }
+.sl-calendar .rdp-day_disabled { opacity: .4; cursor: not-allowed; }
+.sl-calendar button:focus-visible, .sl-calendar select:focus-visible, .sl-calendar input:focus-visible { outline: 2px solid #be1e2d; outline-offset: 2px; z-index: 1; }
+.sl-calendar .has-bookings::after { content: ''; position: absolute; bottom: 3px; width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+@media (max-width: 360px) {
+  .sl-calendar-controls { gap: 2px; }
+  .sl-calendar-controls button { min-width: 28px; }
+  .sl-calendar-controls input { width: 64px; }
+  .sl-calendar-controls select { font-size: 13px; }
+}

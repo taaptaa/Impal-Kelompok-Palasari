@@ -10,18 +10,41 @@ interface WarehouseDashboardProps {
   onLogout: () => void;
   loanRequests: LoanRequest[];
   onUpdateLoan: (loanId: string, updates: Partial<LoanRequest>) => void;
+  readOnly?: boolean;
+  onBrowse?: () => void;
 }
 
 type ProcessMode = 'pickup' | 'return';
 type ReturnCondition = 'good' | 'damaged' | 'lost';
 
-export function WarehouseDashboard({ user, onLogout, loanRequests, onUpdateLoan }: WarehouseDashboardProps) {
+export function WarehouseDashboard({ user, onLogout, loanRequests, onUpdateLoan, readOnly, onBrowse }: WarehouseDashboardProps) {
   const [processMode, setProcessMode] = useState<ProcessMode>('pickup');
   const [searchId, setSearchId] = useState('');
   const [selectedLoan, setSelectedLoan] = useState<LoanRequest | null>(null);
   const [showScanner, setShowScanner] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [returnCondition, setReturnCondition] = useState<ReturnCondition>('good');
+
+  if (readOnly) return <div className="min-h-screen bg-[#F8FAFC]">
+    <header className="px-4 sm:px-8 pt-6 pb-8 relative overflow-hidden text-white">
+      <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${telkomBg})` }} />
+      <div className="absolute inset-0" style={{ background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.85) 0%, rgba(217, 119, 6, 0.90) 100%)' }} />
+      <div className="relative z-10 flex items-center justify-between gap-4">
+        <div className="flex items-center gap-4"><img src={telkomLogo} alt="Telkom University" className="w-16 h-auto" /><div><h1 className="text-2xl font-bold">Dashboard Logistik</h1><p className="text-sm">{user.name}</p></div></div>
+        <button onClick={onLogout} className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/20 focus-visible:outline-2 focus-visible:outline-white"><LogOut className="w-4 h-4" /> Logout</button>
+      </div>
+      <div className="relative z-10 grid grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
+        {[{ icon: CheckCircle, label: 'Siap Diambil' }, { icon: Package, label: 'Sedang Dipinjam' }, { icon: Package, label: 'Diserahkan Hari Ini' }, { icon: RotateCcw, label: 'Dikembalikan Hari Ini' }].map(stat => {
+          const Icon = stat.icon;
+          return <div key={stat.label} className="bg-white/95 rounded-xl p-4 shadow-lg text-center text-slate-900"><Icon className="w-6 h-6 mx-auto mb-2 text-slate-600" /><p className="text-xs text-slate-600">{stat.label}</p><p className="text-2xl font-bold" aria-label="Belum terhubung">—</p></div>;
+        })}
+      </div>
+    </header>
+    <main className="px-4 sm:px-8 py-6 max-w-5xl mx-auto space-y-4">
+      <p role="note" className="bg-white rounded-2xl p-6 shadow-sm">Data serah terima dan pengembalian belum terhubung ke database. Pemindaian dan perubahan status prototipe dinonaktifkan; belum ada transaksi nyata yang ditampilkan.</p>
+      <button type="button" onClick={onBrowse} className="px-5 py-3 rounded-xl bg-[#BE1E2D] text-white font-semibold focus-visible:outline-2 focus-visible:outline-[#BE1E2D]">Lihat Katalog Database</button>
+    </main>
+  </div>;
 
   // Filter loans by status
   const approvedLoans = loanRequests.filter(l => l.status === 'approved');

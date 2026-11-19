@@ -1,18 +1,24 @@
 import { User, Item, LoanRequest } from '../types';
-import { Search, TrendingUp, Clock, Package, ChevronRight, Sparkles, QrCode, RotateCcw, X } from 'lucide-react';
+import { Search, TrendingUp, Clock, Package, ChevronRight, Sparkles, QrCode, RotateCcw, X, UserCircle } from 'lucide-react';
 import { useState } from 'react';
 import { ItemDetailModal } from '../components/ItemDetailModal';
+import type { CatalogItem } from '../api';
+import type { MainScreen } from '../navigation';
+import { InventoryVisual } from '../components/InventoryVisual';
 
 interface HomeScreenProps {
   user: User;
   items: Item[];
   userLoans: LoanRequest[];
-  onNavigate: (screen: 'home' | 'catalog' | 'history' | 'notifications' | 'profile') => void;
+  onNavigate: (screen: MainScreen) => void;
+  liveCatalog?: { items: CatalogItem[]; roomCount: number; planCount: number; loading: boolean; error: string };
+  onSearch?: (query: string) => void;
   onRequestReturn?: (loanId: string) => void;
   onSubmitLoan?: (data: { itemId: string; borrowDate: string; returnDate: string; quantity: number; reason: string }) => void;
 }
 
-export function HomeScreen({ user, items, userLoans, onNavigate, onRequestReturn, onSubmitLoan }: HomeScreenProps) {
+export function HomeScreen({ user, items, userLoans, onNavigate, onRequestReturn, onSubmitLoan, liveCatalog, onSearch }: HomeScreenProps) {
+  const [query, setQuery] = useState('');
   const [showReturnModal, setShowReturnModal] = useState(false);
   const [selectedLoan, setSelectedLoan] = useState<LoanRequest | null>(null);
   const [selectedItem, setSelectedItem] = useState<Item | null>(null);
@@ -38,47 +44,55 @@ export function HomeScreen({ user, items, userLoans, onNavigate, onRequestReturn
   return (
     <div className="min-h-screen" style={{ backgroundColor: '#F4F6F8' }}>
       {/* Header - Telkom Red Gradient */}
-      <div className="px-6 pt-8 pb-6" style={{ background: 'linear-gradient(135deg, #BE1E2D 0%, #9a1823 100%)' }}>
+      <div className="pt-8 pb-6" style={{ background: 'linear-gradient(135deg, #BE1E2D 0%, #9a1823 100%)' }}>
+        <div className="sl-shell" data-home-header>
         <div className="flex items-center justify-between mb-8">
           <div>
             <p className="text-sm mb-1" style={{ color: '#FEE2E2' }}>
               Selamat Datang 👋
             </p>
             <h1 className="text-2xl font-bold" style={{ color: '#FFFFFF' }}>
-              {user.name}
+              {user?.name ?? 'SmartLend'}
             </h1>
           </div>
-          <div className="w-12 h-12 rounded-full overflow-hidden" style={{ backgroundColor: '#BE1E2D' }}>
-            <img src={user.avatar} alt={user.name} className="w-full h-full object-cover" />
-          </div>
+          <button type="button" onClick={() => onNavigate('profile')} aria-label="Buka akun atau profil" className="w-12 h-12 rounded-full overflow-hidden flex items-center justify-center shrink-0 focus-visible:outline-2 focus-visible:outline-white" style={{ backgroundColor: '#BE1E2D' }}>
+            {user?.avatar ? <img src={user.avatar} alt={user.name} className="w-full h-full object-cover" /> : <UserCircle className="w-8 h-8 text-white" />}
+          </button>
         </div>
 
         {/* Search Bar */}
-        <div className="relative">
+        <form className="relative flex gap-2" onSubmit={event => { event.preventDefault(); onSearch ? onSearch(query.trim()) : onNavigate('catalog'); }}>
+          <label htmlFor="home-search" className="sr-only">Cari barang dari Home</label>
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5" style={{ color: '#94A3B8' }} strokeWidth={1.5} />
           <input
+            id="home-search"
             type="text"
+            value={query} onChange={event => setQuery(event.target.value)}
             placeholder="Cari barang inventaris..."
-            onClick={() => onNavigate('catalog')}
-            className="w-full pl-12 pr-4 py-4 rounded-2xl border-0 focus:outline-none focus:ring-2 transition-all"
+            className="min-w-0 flex-1 pl-12 pr-4 py-4 rounded-2xl border-0 focus:outline-none focus:ring-2 transition-all"
             style={{ backgroundColor: '#FFFFFF', color: '#333333' }}
             onFocus={(e) => e.target.style.borderColor = '#BE1E2D'}
           />
+          <button type="submit" className="px-4 py-3 rounded-xl bg-white font-semibold text-[#9A1823] focus-visible:outline-2 focus-visible:outline-white">Cari</button>
+        </form>
         </div>
       </div>
 
-      <div className="px-6 py-6">
+      <div className="sl-shell sl-section" data-home-content>
+        {liveCatalog && <p className="text-sm text-slate-600 mb-5">Temukan barang dan ruangan kampus, lalu pilih barang ke keranjang untuk diajukan melalui akun Mahasiswa. Ketersediaan belum diverifikasi; pengajuan bukan reservasi.</p>}
+        {liveCatalog?.loading && <p role="status" className="mb-4">Memuat katalog Home...</p>}
+        {liveCatalog?.error && <p role="alert" className="mb-4 text-red-700">Katalog Home gagal dimuat: {liveCatalog.error}</p>}
         {/* Stats Cards */}
-        <div className="grid grid-cols-3 gap-3 mb-8">
+        <div className="sl-home-stats mb-8">
           <div className="bg-white rounded-2xl p-4 shadow-sm">
             <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-3" style={{ backgroundColor: '#FEF3C7' }}>
               <Clock className="w-5 h-5" style={{ color: '#F59E0B' }} strokeWidth={1.5} />
             </div>
             <p className="text-2xl font-bold mb-1" style={{ color: '#0F172A' }}>
-              {pendingLoans}
+              {liveCatalog ? (liveCatalog.loading || liveCatalog.error ? '—' : liveCatalog.items.length) : pendingLoans}
             </p>
             <p className="text-xs" style={{ color: '#64748B' }}>
-              Pending
+              {liveCatalog ? 'Jenis barang' : 'Pending'}
             </p>
           </div>
 
@@ -87,10 +101,10 @@ export function HomeScreen({ user, items, userLoans, onNavigate, onRequestReturn
               <Package className="w-5 h-5" style={{ color: '#10B981' }} strokeWidth={1.5} />
             </div>
             <p className="text-2xl font-bold mb-1" style={{ color: '#0F172A' }}>
-              {activeLoans}
+              {liveCatalog ? (liveCatalog.loading || liveCatalog.error ? '—' : liveCatalog.roomCount) : activeLoans}
             </p>
             <p className="text-xs" style={{ color: '#64748B' }}>
-              Aktif
+              {liveCatalog ? 'Ruangan tercatat' : 'Aktif'}
             </p>
           </div>
 
@@ -99,10 +113,10 @@ export function HomeScreen({ user, items, userLoans, onNavigate, onRequestReturn
               <TrendingUp className="w-5 h-5" style={{ color: '#BE1E2D' }} strokeWidth={1.5} />
             </div>
             <p className="text-2xl font-bold mb-1" style={{ color: '#0F172A' }}>
-              {items.length}
+              {liveCatalog ? liveCatalog.planCount : items.length}
             </p>
             <p className="text-xs" style={{ color: '#64748B' }}>
-              Item
+              {liveCatalog ? 'Jenis dalam keranjang' : 'Item'}
             </p>
           </div>
         </div>
@@ -113,13 +127,13 @@ export function HomeScreen({ user, items, userLoans, onNavigate, onRequestReturn
             <div>
               <div className="flex items-center gap-2 mb-2">
                 <Sparkles className="w-5 h-5 text-yellow-300" strokeWidth={2} />
-                <span className="text-sm font-semibold" style={{ color: '#FEE2E2' }}>Featured</span>
+                <span className="text-sm font-semibold" style={{ color: '#FEE2E2' }}>{liveCatalog ? 'Inventaris kampus' : 'Featured'}</span>
               </div>
               <h3 className="text-xl mb-2 font-bold" style={{ color: '#FFFFFF' }}>
-                Pinjam Barang Sekarang
+                {liveCatalog ? 'Siapkan kebutuhan kegiatanmu' : 'Pinjam Barang Sekarang'}
               </h3>
               <p className="text-sm mb-4" style={{ color: '#FEE2E2' }}>
-                Proses cepat & mudah dengan QR Code
+                {liveCatalog ? 'Pilih beberapa barang, periksa jadwal, lalu kirim pengajuan. Keranjang belum menjadi reservasi.' : 'Proses cepat & mudah dengan QR Code'}
               </p>
               <button
                 onClick={() => onNavigate('catalog')}
@@ -133,11 +147,16 @@ export function HomeScreen({ user, items, userLoans, onNavigate, onRequestReturn
           </div>
         </div>
 
+        {liveCatalog && <div className="flex flex-wrap gap-3 mb-8">
+          <button type="button" onClick={() => onNavigate('rooms')} className="bg-white rounded-xl px-5 py-3 text-[#9A1823] font-semibold border border-slate-200 focus-visible:outline-2">Katalog Ruangan</button>
+          <button type="button" onClick={() => onNavigate('plan')} className="bg-white rounded-xl px-5 py-3 text-[#9A1823] font-semibold border border-slate-200 focus-visible:outline-2">Buka Keranjang ({liveCatalog.planCount})</button>
+        </div>}
+
         {/* Popular Items */}
         <div className="mb-8">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-bold" style={{ color: '#0F172A' }}>
-              Item Populer
+              {liveCatalog ? 'Barang dalam Katalog' : 'Item Populer'}
             </h2>
             <button
               onClick={() => onNavigate('catalog')}
@@ -149,8 +168,12 @@ export function HomeScreen({ user, items, userLoans, onNavigate, onRequestReturn
             </button>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            {popularItems.map((item) => (
+          <div className="sl-home-grid">
+            {liveCatalog ? (!liveCatalog.loading && !liveCatalog.error && liveCatalog.items.slice(0,4).map(item =>
+              <article key={item.id_barang} className="min-w-0 bg-white rounded-2xl overflow-hidden shadow-sm text-left">
+                <InventoryVisual name={item.nama_barang} code={item.kode_barang} className="h-24 sm:h-36" />
+                <button type="button" onClick={() => { onSearch ? onSearch(item.kode_barang) : onNavigate('catalog'); }} className="p-3 w-full text-left hover:bg-slate-50 focus-visible:outline-2 focus-visible:outline-[#BE1E2D]"><h3 className="font-semibold text-sm mb-1 break-words">{item.nama_barang}</h3><p className="text-xs text-slate-600 break-words">{item.kode_barang}</p><p className="text-xs text-slate-600">Stok total: {item.stok_total} {item.satuan}</p><p className="text-xs text-slate-600">Belum diverifikasi</p></button>
+              </article>)) : popularItems.map((item) => (
               <div
                 key={item.id}
                 onClick={() => setSelectedItem(item)}
@@ -182,6 +205,7 @@ export function HomeScreen({ user, items, userLoans, onNavigate, onRequestReturn
               </div>
             ))}
           </div>
+          {liveCatalog && !liveCatalog.loading && !liveCatalog.error && liveCatalog.items.length === 0 && <p className="bg-white p-5 rounded-xl text-slate-600">Belum ada data barang pada database ini.</p>}
         </div>
 
         {/* Barang Sedang Dipinjam - NEW SECTION */}
@@ -481,12 +505,12 @@ export function HomeScreen({ user, items, userLoans, onNavigate, onRequestReturn
       </div>
 
       {/* Item Detail Modal */}
-      <ItemDetailModal 
+      {user && <ItemDetailModal
         item={selectedItem}
         user={user}
         onClose={() => setSelectedItem(null)}
         onSubmitLoan={onSubmitLoan}
-      />
+      />}
     </div>
   );
 }
