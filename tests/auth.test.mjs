@@ -1,0 +1,48 @@
+import { test, before, after } from 'node:test';
+import assert from 'node:assert/strict';
+import { openDb } from '../backend/db.mjs';
+import { seed } from '../backend/seed.mjs';
+import { makeServer } from '../backend/server.mjs';
+import { PasswordHasher, AuthService, digest } from '../backend/auth.mjs';
+import { randomBytes } from 'node:crypto';
+let db,server,url;
+const passwords=Object.fromEntries(['student','admin','warehouse'].map(role=>[role,randomBytes(24).toString('base64url')]));
+before(async()=>{db=openDb(':memory:');seed(db,passwords);server=makeServer(db,'http://127.0.0.1:3000');await new Promise(r=>server.listen(0,'127.0.0.1',r));url=`http://127.0.0.1:${server.address().port}`;});
+after(async()=>{await new Promise(r=>server.close(r));db.close();});
+const post=(path,data,cookie='',csrf='',origin='http://127.0.0.1:3000')=>fetch(url+path,{method:'POST',headers:{'Content-Type':'application/json',Origin:origin,Cookie:cookie,'X-CSRF-Token':csrf},body:JSON.stringify(data)});
+const creds=(role='student')=>({email:({student:'mahasiswa',admin:'admin',warehouse:'petugas'})[role]+'@smartlend.test',password:passwords[role],role});
+let cookie,csrf;
+test('01 login valid tiga peran berasal dari database',async()=>{for(const role of ['student','admin','warehouse']){const r=await post('/api/login',creds(role));assert.equal(r.status,200);const d=await r.json();assert.equal(d.user.role,role);assert.equal('password_hash' in d.user,false);if(role==='student'){cookie=r.headers.get('set-cookie').split(';')[0];csrf=d.csrf;}assert.match(r.headers.get('set-cookie'),/HttpOnly; SameSite=Strict/);}});
+test('02 password salah ditolak',async()=>assert.equal((await post('/api/login',{...creds(),password:'salah'})).status,401));
+test('03 akun tidak dikenal ditolak',async()=>assert.equal((await post('/api/login',{...creds(),email:'nobody@test.id'})).status,401));
+test('04 field kosong ditolak server',async()=>assert.equal((await post('/api/login',{...creds(),password:''})).status,400));
+test('05 manipulasi pilihan role tidak menaikkan hak akses',async()=>assert.equal((await post('/api/login',{...creds(),role:'admin'})).status,401));
+test('06 sesi bertahan pada permintaan /me berikutnya',async()=>{const r=await fetch(url+'/api/me',{headers:{Cookie:cookie}});assert.equal(r.status,200);assert.equal((await r.json()).user.role,'student');});
+test('07 endpoint admin menolak mahasiswa',async()=>assert.equal((await fetch(url+'/api/admin',{headers:{Cookie:cookie}})).status,403));
+test('08 akses anonim ditolak',async()=>assert.equal((await fetch(url+'/api/me')).status,401));
+test('09 SQL injection tidak melewati login',async()=>assert.equal((await post('/api/login',{...creds(),email:"' OR 1=1 --"})).status,401));
+test('10 logout tanpa CSRF ditolak',async()=>assert.equal((await post('/api/logout',{},cookie)).status,403));
+test('11 origin asing ditolak',async()=>assert.equal((await post('/api/login',creds(),'','','https://evil.example')).status,403));
+test('12 logout menghapus sesi dan replay ditolak',async()=>{assert.equal((await post('/api/logout',{},cookie,csrf)).status,200);assert.equal((await fetch(url+'/api/me',{headers:{Cookie:cookie}})).status,401);});
+test('13 lockout setelah 5 kegagalan',async()=>{const c={...creds(),email:'lock@test.id'};for(let i=0;i<5;i++)assert.equal((await post('/api/login',c)).status,401);assert.equal((await post('/api/login',c)).status,429);});
+test('14 password memakai salt unik dan verifikasi scrypt',()=>{const h=new PasswordHasher(),a=h.hash('x'),b=h.hash('x');assert.notEqual(a,b);assert.ok(h.verify('x',a));assert.ok(!h.verify('y',a));});
+test('15 sesi kedaluwarsa ditolak',()=>{const a=new AuthService(db),s=a.login(...[creds().email,creds().password,'student']);db.prepare('UPDATE sesi SET expires_at=0 WHERE token_hash=?').run(digest(s.token));assert.equal(a.current(s.token),null);});
+test('16 akun nonaktif ditolak',async()=>{db.prepare('UPDATE pengguna SET aktif=0 WHERE id_pengguna=3').run();assert.equal((await post('/api/login',creds('warehouse'))).status,401);db.prepare('UPDATE pengguna SET aktif=1 WHERE id_pengguna=3').run();});
+test('17 login merotasi sesi lama',()=>{const a=new AuthService(db),one=a.login(creds().email,creds().password,'student'),two=a.login(creds().email,creds().password,'student',one.token);assert.notEqual(one.token,two.token);assert.equal(a.current(one.token),null);assert.ok(a.current(two.token));});
+test('18 constraint FK, role, dan email unik',()=>{assert.throws(()=>db.prepare('INSERT INTO sesi VALUES(?,?,?,?)').run('invalid',999,'x',99));assert.throws(()=>db.prepare("UPDATE pengguna SET peran='superuser' WHERE id_pengguna=1").run());assert.throws(()=>db.prepare('UPDATE pengguna SET email=? WHERE id_pengguna=2').run(creds().email));});
+test('19 admin dapat mengakses endpoint admin',async()=>{const r=await post('/api/login',creds('admin'));assert.equal((await fetch(url+'/api/admin',{headers:{Cookie:r.headers.get('set-cookie').split(';')[0]}})).status,200);});
+test('20 payload null ditolak secara terkendali',async()=>assert.equal((await post('/api/login',null)).status,400));
+test('tiga role memakai password berbeda: login, otorisasi, logout dan replay sesi',async()=>{
+ for(const role of ['student','admin','warehouse']) {
+  const loginResponse=await post('/api/login',creds(role));
+  assert.equal(loginResponse.status,200);
+  const session=await loginResponse.json();
+  const sessionCookie=loginResponse.headers.get('set-cookie').split(';')[0];
+  assert.equal(session.user.role,role);
+  assert.equal((await post('/api/login',{...creds(role),password:passwords[role==='admin'?'warehouse':'admin']})).status,401);
+  assert.equal((await fetch(url+'/api/me',{headers:{Cookie:sessionCookie}})).status,200);
+  assert.equal((await fetch(url+'/api/admin',{headers:{Cookie:sessionCookie}})).status,role==='admin'?200:403);
+  assert.equal((await post('/api/logout',{},sessionCookie,session.csrf)).status,200);
+  assert.equal((await fetch(url+'/api/me',{headers:{Cookie:sessionCookie}})).status,401);
+ }
+});

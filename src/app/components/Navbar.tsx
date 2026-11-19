@@ -1,89 +1,65 @@
-import { Bell, User, Search, LogOut } from 'lucide-react';
+import { User, LogOut } from 'lucide-react';
 import { User as UserType } from '../types';
+import type { MainScreen } from '../navigation';
 
 interface NavbarProps {
-  user: UserType;
+  user: UserType | null;
   onLogout: () => void;
+  onLogin?: () => void;
+  currentScreen?: MainScreen;
+  onNavigate?: (screen: MainScreen) => void;
+  planCount?: number;
 }
 
-export function Navbar({ user, onLogout }: NavbarProps) {
+export function Navbar({ user, onLogout, onLogin, currentScreen = 'home', onNavigate, planCount = 0 }: NavbarProps) {
+  const links: { id: MainScreen; label: string }[] = [
+    ...(user ? [{ id: 'home' as const, label: 'Home' }] : []), { id: 'catalog', label: 'Katalog Barang' },
+    { id: 'rooms', label: 'Katalog Ruangan' }, { id: 'plan', label: `Keranjang (${planCount})` },
+  ];
+  const internal = user?.role === 'admin' || user?.role === 'warehouse';
+  if (user?.role==='student') links.push({id:'loans',label:'Peminjaman Saya'});
+  if (internal) links.push({ id: 'dashboard', label: 'Dashboard' });
   return (
     <nav 
       className="bg-white border-b border-gray-200 sticky top-0 z-40"
-      style={{ boxShadow: 'var(--shadow-sm)' }}
+      aria-label="Navigasi utama" style={{ boxShadow: 'var(--shadow-sm)' }}
     >
-      <div className="max-w-7xl mx-auto px-6 py-4">
-        <div className="flex items-center justify-between">
+      <div className="sl-shell py-4">
+        <div className="flex items-center justify-between gap-3 flex-wrap">
           {/* Logo */}
-          <div className="flex items-center gap-8">
-            <h1 
+          <div className="flex items-center gap-6 min-w-0">
+            <button type="button" disabled={!onNavigate} onClick={() => user ? onNavigate?.('home') : onLogin?.()} aria-label={user ? 'SmartLend Home' : 'Kembali ke pemilihan role'}
               className="text-2xl font-bold"
               style={{ color: 'var(--color-primary)' }}
             >
               SmartLend
-            </h1>
-            {user.role === 'student' && (
-              <div className="hidden md:flex items-center gap-6">
-                <a href="#" className="text-sm font-medium hover:text-blue-600 transition-colors" style={{ color: 'var(--color-text-primary)' }}>
-                  Beranda
-                </a>
-                <a href="#" className="text-sm font-medium hover:text-blue-600 transition-colors" style={{ color: 'var(--color-text-secondary)' }}>
-                  Katalog
-                </a>
-                <a href="#" className="text-sm font-medium hover:text-blue-600 transition-colors" style={{ color: 'var(--color-text-secondary)' }}>
-                  Riwayat Saya
-                </a>
-                <a href="#" className="text-sm font-medium hover:text-blue-600 transition-colors" style={{ color: 'var(--color-text-secondary)' }}>
-                  Bantuan
-                </a>
-              </div>
-            )}
+            </button>
+            <div className="hidden lg:flex items-center gap-4">
+              {onNavigate && links.map(link => <button key={link.id} type="button" data-nav={link.id} onClick={() => onNavigate(link.id)} aria-current={currentScreen === link.id ? 'page' : undefined}
+                className="py-2 text-sm font-semibold focus-visible:outline-2 focus-visible:outline-[#BE1E2D]" style={{ color: currentScreen === link.id ? '#BE1E2D' : '#475569' }}>{link.label}</button>)}
+            </div>
           </div>
 
           {/* Right Section */}
-          <div className="flex items-center gap-4">
-            {/* Notification */}
-            <button 
-              className="p-2 hover:bg-gray-100 transition-colors relative"
-              style={{ borderRadius: 'var(--radius-md)' }}
-            >
-              <Bell className="w-5 h-5" style={{ color: 'var(--color-text-secondary)' }} strokeWidth={1.5} />
-              <span 
-                className="absolute top-1 right-1 w-2 h-2"
-                style={{ 
-                  backgroundColor: 'var(--color-error)',
-                  borderRadius: 'var(--radius-full)'
-                }}
-              />
-            </button>
+          <div className="flex items-center gap-3">
 
             {/* User Menu */}
-            <div className="flex items-center gap-3 pl-4 border-l border-gray-200">
-              <div 
-                className="w-10 h-10 flex items-center justify-center"
-                style={{ 
-                  backgroundColor: 'var(--color-primary)10',
-                  borderRadius: 'var(--radius-full)'
-                }}
+            <div className="flex items-center gap-3">
+              {internal && onNavigate && <button type="button" onClick={() => onNavigate('dashboard')} data-nav="dashboard" className="lg:hidden text-sm font-semibold py-2 text-[#BE1E2D]">Dashboard</button>}
+              {user && <button type="button" disabled={!onNavigate} onClick={() => onNavigate?.('profile')} data-nav="profile" aria-current={currentScreen === 'profile' ? 'page' : undefined}
+                className="flex items-center gap-2 rounded-lg p-2 hover:bg-gray-100 focus-visible:outline-2 focus-visible:outline-[#BE1E2D]"
               >
                 <User className="w-5 h-5" style={{ color: 'var(--color-primary)' }} strokeWidth={1.5} />
-              </div>
-              <div className="hidden md:block">
-                <p className="text-sm font-semibold" style={{ color: 'var(--color-text-primary)' }}>
-                  {user.name}
-                </p>
-                <p className="text-xs" style={{ color: 'var(--color-text-secondary)' }}>
-                  {user.email}
-                </p>
-              </div>
-              <button
+                <span className="text-sm font-semibold">Akun</span>
+              </button>}
+              {user ? <button
                 onClick={onLogout}
                 className="p-2 hover:bg-gray-100 transition-colors"
                 style={{ borderRadius: 'var(--radius-md)' }}
-                title="Logout"
+                title="Logout" aria-label="Logout"
               >
                 <LogOut className="w-4 h-4" style={{ color: 'var(--color-text-secondary)' }} strokeWidth={1.5} />
-              </button>
+              </button> : <button type="button" onClick={onLogin} className="text-sm font-semibold text-[#BE1E2D] px-2 py-2 rounded-lg focus-visible:outline-2">Masuk</button>}
             </div>
           </div>
         </div>

@@ -1,10 +1,12 @@
 import { User } from '../types';
-import { LogOut, HelpCircle, Mail, Phone, MapPin, BookOpen, Shield, Info, ChevronRight, X, CheckCircle } from 'lucide-react';
+import { LogOut, HelpCircle, Mail, Phone, MapPin, BookOpen, Shield, Info, ChevronRight, X, CheckCircle, UserCircle } from 'lucide-react';
 import { useState } from 'react';
 
 interface ProfileScreenProps {
-  user: User;
+  user: User | null;
   onLogout: () => void;
+  onLogin?: () => void;
+  sessionOnly?: boolean;
 }
 
 // Define help content data
@@ -51,8 +53,30 @@ const helpContentData = {
   }
 };
 
-export function ProfileScreen({ user, onLogout }: ProfileScreenProps) {
+const verifiedHelpContentData = {
+  'Cara Meminjam Barang': { icon: HelpCircle, content: [
+    { title: 'Buka katalog', desc: 'Cari barang berdasarkan nama, kode, atau jenis.' },
+    { title: 'Isi keranjang', desc: 'Pilih jumlah lalu tekan Tambah ke Keranjang. Jumlah bisa diubah dan barang bisa dihapus.' },
+    { title: 'Ajukan sebagai Mahasiswa', desc: 'Buka Keranjang, tekan Ajukan Peminjaman, isi waktu WIB dan keperluan, lalu kirim. Lihat status dari database melalui Peminjaman Saya.' },
+    { title: 'Bukan reservasi', desc: 'Pengajuan tersimpan dengan status menunggu. Approval, QR, reservasi dan pembayaran belum tersedia.' },
+  ] },
+  'Syarat & Ketentuan': { icon: BookOpen, content: [
+    { title: 'Ketersediaan', desc: 'Stok total bukan stok tersedia. Ketersediaan barang dan jadwal ruangan belum diverifikasi.' },
+    { title: 'Kebijakan lanjutan', desc: 'Durasi, biaya, denda dan syarat pengajuan final belum tersedia dalam aplikasi ini.' },
+  ] },
+  'Kebijakan Privasi': { icon: Shield, content: [
+    { title: 'Sesi akun', desc: 'Login diverifikasi backend; cookie sesi HttpOnly dan peran akun berasal dari database.' },
+    { title: 'Data profil', desc: 'Nama, email dan peran ditampilkan dari sesi. Perubahan profil belum tersedia.' },
+  ] },
+  'Tentang SmartLend': { icon: Info, content: [
+    { title: 'Tujuan', desc: 'Membantu menemukan inventaris dan menyiapkan keranjang peminjaman kampus.' },
+    { title: 'Status integrasi', desc: 'Katalog, sesi dan pengajuan barang mahasiswa menggunakan backend lokal. Persetujuan dan reservasi belum diimplementasikan.' },
+  ] },
+};
+
+export function ProfileScreen({ user, onLogout, onLogin, sessionOnly }: ProfileScreenProps) {
   const [selectedHelp, setSelectedHelp] = useState<string | null>(null);
+  const helpContent = sessionOnly ? verifiedHelpContentData : helpContentData;
 
   const helpItems = [
     {
@@ -79,7 +103,7 @@ export function ProfileScreen({ user, onLogout }: ProfileScreenProps) {
     {
       icon: Info,
       title: 'Tentang SmartLend',
-      description: 'Versi 1.0.0 • Telkom University Edition',
+      description: sessionOnly ? 'Informasi integrasi dan batas fitur' : 'Versi 1.0.0 • Telkom University Edition',
       color: '#BE1E2D',
       bgColor: '#FEE2E5'
     }
@@ -90,21 +114,21 @@ export function ProfileScreen({ user, onLogout }: ProfileScreenProps) {
       {/* Header */}
       <div className="px-6 pt-8 pb-8" style={{ background: 'linear-gradient(135deg, #BE1E2D 0%, #8B1621 100%)' }}>
         <h1 className="text-2xl font-bold mb-6" style={{ color: '#FFFFFF' }}>
-          Profil & Bantuan
+          {sessionOnly ? 'Akun & Profil' : 'Profil & Bantuan'}
         </h1>
 
         {/* User Card */}
         <div className="bg-white rounded-3xl p-6 shadow-sm">
           <div className="flex items-center gap-4 mb-6">
             <div className="w-16 h-16 rounded-full overflow-hidden flex items-center justify-center" style={{ backgroundColor: '#BE1E2D' }}>
-              <img src={user.avatar} alt={user.name} className="w-full h-full object-cover" />
+              {user?.avatar ? <img src={user.avatar} alt={user.name} className="w-full h-full object-cover" /> : <UserCircle className="w-9 h-9 text-white" />}
             </div>
-            <div className="flex-1">
+            <div className="flex-1 min-w-0 break-words">
               <h2 className="font-bold text-lg mb-1" style={{ color: '#0F172A' }}>
-                {user.name}
+                {user?.name ?? 'Pengunjung'}
               </h2>
               <p className="text-sm" style={{ color: '#64748B' }}>
-                ID: {user.id}
+                {user ? `ID: ${user.id}` : 'Belum login. Katalog dan keranjang dapat diakses tanpa akun.'}
               </p>
             </div>
           </div>
@@ -112,19 +136,19 @@ export function ProfileScreen({ user, onLogout }: ProfileScreenProps) {
           <div className="space-y-3">
             <div className="flex items-center gap-3 p-3 rounded-xl" style={{ backgroundColor: '#FEF2F3' }}>
               <Mail className="w-5 h-5" style={{ color: '#BE1E2D' }} strokeWidth={1.5} />
-              <div className="flex-1">
-                <p className="text-xs" style={{ color: '#64748B' }}>SSO Email</p>
-                <p className="text-sm font-semibold" style={{ color: '#0F172A' }}>{user.email}</p>
+              <div className="flex-1 min-w-0 break-words">
+                <p className="text-xs" style={{ color: '#64748B' }}>{sessionOnly ? 'Email akun' : 'SSO Email'}</p>
+                <p className="text-sm font-semibold" style={{ color: '#0F172A' }}>{user?.email ?? 'Belum login'}</p>
               </div>
             </div>
 
-            <div className="flex items-center gap-3 p-3 rounded-xl" style={{ backgroundColor: '#FEF2F3' }}>
+            {!sessionOnly && <div className="flex items-center gap-3 p-3 rounded-xl" style={{ backgroundColor: '#FEF2F3' }}>
               <Phone className="w-5 h-5" style={{ color: '#BE1E2D' }} strokeWidth={1.5} />
               <div className="flex-1">
                 <p className="text-xs" style={{ color: '#64748B' }}>Telepon</p>
                 <p className="text-sm font-semibold" style={{ color: '#0F172A' }}>+62 812 3456 7890</p>
               </div>
-            </div>
+            </div>}
 
             <div className="flex items-center gap-3 p-3 rounded-xl" style={{ backgroundColor: '#FEF2F3' }}>
               <MapPin className="w-5 h-5" style={{ color: '#BE1E2D' }} strokeWidth={1.5} />
@@ -134,6 +158,7 @@ export function ProfileScreen({ user, onLogout }: ProfileScreenProps) {
               </div>
             </div>
           </div>
+          {sessionOnly && <p className="mt-4 text-sm text-slate-600">Peran: {user ? ({ student: 'Mahasiswa', admin: 'Admin', warehouse: 'Petugas Gudang' }[user.role]) : 'Pengunjung'}. {user ? 'Data berasal dari sesi backend. Perubahan profil belum tersedia.' : 'Tidak ada akun atau hak akses internal yang dibuat untuk pengunjung.'}</p>}
         </div>
       </div>
 
@@ -173,7 +198,7 @@ export function ProfileScreen({ user, onLogout }: ProfileScreenProps) {
         </div>
 
         {/* Contact Support */}
-        <div className="mt-6 rounded-3xl p-6 shadow-sm" style={{ background: 'linear-gradient(135deg, #BE1E2D 0%, #8B1621 100%)' }}>
+        {!sessionOnly && <div className="mt-6 rounded-3xl p-6 shadow-sm" style={{ background: 'linear-gradient(135deg, #BE1E2D 0%, #8B1621 100%)' }}>
           <h3 className="font-bold text-lg text-white mb-2">
             Butuh Bantuan Lebih?
           </h3>
@@ -183,16 +208,17 @@ export function ProfileScreen({ user, onLogout }: ProfileScreenProps) {
           <button className="w-full bg-white py-3 rounded-xl font-bold text-sm hover:shadow-lg transition-all" style={{ color: '#BE1E2D' }}>
             Hubungi Support
           </button>
-        </div>
+        </div>}
+        {sessionOnly && <p className="mt-6 text-sm text-slate-600">Kontak dukungan terverifikasi belum tersedia di aplikasi ini.</p>}
 
         {/* Logout Button */}
         <button
-          onClick={onLogout}
+          onClick={user ? onLogout : onLogin}
           className="w-full mt-6 py-4 rounded-2xl font-bold text-sm flex items-center justify-center gap-2 transition-all hover:opacity-90"
           style={{ backgroundColor: '#FEE2E2', color: '#EF4444' }}
         >
           <LogOut className="w-5 h-5" strokeWidth={2} />
-          Keluar dari Akun
+          {user ? 'Keluar dari Akun' : 'Masuk ke Akun'}
         </button>
       </div>
 
@@ -212,7 +238,7 @@ export function ProfileScreen({ user, onLogout }: ProfileScreenProps) {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   {(() => {
-                    const IconComponent = helpContentData[selectedHelp as keyof typeof helpContentData].icon;
+                    const IconComponent = helpContent[selectedHelp as keyof typeof helpContentData].icon;
                     return (
                       <div
                         className="w-12 h-12 rounded-xl flex items-center justify-center"
@@ -237,7 +263,7 @@ export function ProfileScreen({ user, onLogout }: ProfileScreenProps) {
 
             {/* Modal Content */}
             <div className="p-6 space-y-3">
-              {helpContentData[selectedHelp as keyof typeof helpContentData].content.map((item: any, index: number) => (
+              {helpContent[selectedHelp as keyof typeof helpContentData].content.map((item: any, index: number) => (
                 <div key={index} className="rounded-2xl p-4 shadow-sm" style={{ backgroundColor: '#F8FAFC' }}>
                   {'step' in item ? (
                     <div className="flex items-start gap-4">

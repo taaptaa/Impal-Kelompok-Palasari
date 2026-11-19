@@ -1,0 +1,40 @@
+/* Shared alignment for the existing SmartLend screens, independent of spacing tokens. */
+.sl-shell { width: 100%; max-width: 1440px; margin-inline: auto; padding-inline: 16px; min-width: 0; }
+.sl-section { padding-block: 24px; }
+.sl-catalog-grid, .sl-home-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 20px; }
+.sl-home-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.sl-home-stats > div > p:first-of-type { font-size: 28px; font-weight: 700; line-height: 1.2; }
+.sl-catalog-search { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; }
+.sl-catalog-result { grid-column: 1 / -1; }
+.sl-checkout-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 24px; align-items: start; }
+.sl-cart-row { display: grid; grid-template-columns: 72px minmax(0, 1fr); gap: 16px; padding-block: 20px; border-bottom: 1px solid #e2e8f0; }
+.sl-cart-controls { grid-column: 1 / -1; display: flex; gap: 8px; align-items: end; flex-wrap: wrap; }
+.sl-cart-controls button, .sl-cart-controls input { min-height: 44px; }
+.sl-cart-controls input { width: 84px; }
+.sl-mobile-nav-label { min-height: 28px; }
+.sl-panel { background: white; border: 1px solid #e2e8f0; border-radius: 16px; padding: 20px; min-width: 0; }
+.sl-form-section { border-bottom: 1px solid #e2e8f0; padding-bottom: 24px; }
+.sl-form-section:last-of-type { border-bottom: 0; }
+.sl-checkout input[type='datetime-local'] { width: 100%; min-width: 0; max-width: 100%; }
+.sl-checkout :is(input, textarea, select) { scroll-margin-block: 120px; }
+.sl-checkout :is(button, a):focus-visible { outline: 2px solid #BE1E2D; outline-offset: 3px; }
+.sl-checkout fieldset:disabled { color: #64748b; }
+.sl-checkout fieldset:disabled input, .sl-checkout fieldset:disabled textarea { background: #f8fafc; }
+.sl-credit-list { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; }
+@media (min-width: 600px) {
+  .sl-shell { padding-inline: 24px; }
+  .sl-catalog-grid, .sl-home-grid, .sl-credit-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .sl-cart-row { grid-template-columns: 96px minmax(0, 1fr); }
+}
+@media (min-width: 1024px) {
+  .sl-shell { padding-inline: 32px; }
+  .sl-catalog-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .sl-home-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .sl-checkout-grid { grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.25fr); }
+}
+@media (min-width: 1280px) { .sl-catalog-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+@media (min-width: 768px) { .sl-catalog-search { grid-template-columns: minmax(0, 1fr) 200px; align-items: end; } }
+@media (max-width: 359px) { .sl-home-stats { grid-template-columns: minmax(0, 1fr); } }
+@media (prefers-reduced-motion: reduce) {
+  .sl-checkout *, .sl-shell * { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
+}

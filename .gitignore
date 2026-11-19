@@ -1,0 +1,12 @@
+node_modules
+node_modules/
+dist/
+database/disposable/
+*.sqlite*
+*.db
+.env
+.env.*
+!.env.example
+backups/
+uploads/
+test-results.json

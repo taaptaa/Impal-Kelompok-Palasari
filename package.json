@@ -5,7 +5,13 @@
   "type": "module",
   "scripts": {
     "build": "vite build",
-    "dev": "vite"
+    "dev": "vite",
+    "server": "node backend/server.mjs",
+    "test:backend": "node --test tests/auth.test.mjs tests/catalog.test.mjs tests/plan.test.mjs tests/seed.test.mjs tests/inventory.test.mjs tests/loans.test.mjs tests/backend-reads.test.mjs tests/loan-form.test.mjs",
+    "test:read-models": "node --test tests/loan-read-models.test.mjs tests/frontend-calendar.test.mjs",
+    "test:integration": "node tests/browser-integration-sprint2.mjs",
+    "test:checkout": "node tests/browser-checkout-sprint2.mjs",
+    "test:activation": "node --test --test-timeout=30000 tests/loan-form-migration.test.mjs tests/documents-sandbox.test.mjs tests/database-engineer/verification-workflow.test.mjs"
   },
   "dependencies": {
     "@emotion/react": "11.14.0",

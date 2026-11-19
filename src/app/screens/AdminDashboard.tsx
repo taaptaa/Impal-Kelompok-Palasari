@@ -4,6 +4,9 @@ import { LogOut, Plus, Package, CheckCircle, XCircle, Clock, Search, Filter, Edi
 import { toast } from 'sonner';
 import telkomLogo from 'figma:asset/623803f2801f48df421c6a73b102830c97d7f2c1.png';
 import telkomBg from 'figma:asset/0e86c95630b818072ace687907edb996034e5029.png';
+import { AdminRequestsPanel } from '../components/loans/AdminRequestsPanel';
+import type { AdminOverview, RemoteView } from '../components/loans/view-contracts';
+import type { AdminRequestsPanelProps } from '../components/loans/view-contracts';
 
 interface AdminDashboardProps {
   user: User;
@@ -12,12 +15,33 @@ interface AdminDashboardProps {
   onUpdateLoan: (loanId: string, updates: Partial<LoanRequest>) => void;
   items: Item[];
   onUpdateItems?: (items: Item[]) => void;
+  readOnly?: boolean;
+  onBrowse?: () => void;
+  overview?: RemoteView<AdminOverview>;
+  onRetryOverview?: () => void;
 }
 
 type TabType = 'pending' | 'approved' | 'active' | 'completed' | 'rejected' | 'all';
 type ViewMode = 'approval' | 'inventory';
 
-export function AdminDashboard({ user, onLogout, loanRequests, onUpdateLoan, items, onUpdateItems }: AdminDashboardProps) {
+export function ReadOnlyAdminDashboard({user,onLogout,onBrowse,...panel}: {user:User;onLogout:()=>void;onBrowse?:()=>void}&AdminRequestsPanelProps) {
+  return <div className="min-h-screen bg-[#F8FAFC]">
+    <header className="px-4 sm:px-8 pt-6 pb-8 relative overflow-hidden text-white">
+      <div className="absolute inset-0 bg-cover bg-center" style={{backgroundImage:`url(${telkomBg})`}} />
+      <div className="absolute inset-0" style={{background:'linear-gradient(135deg, rgba(16, 185, 129, 0.85) 0%, rgba(5, 150, 105, 0.90) 100%)'}} />
+      <div className="relative z-10 flex flex-wrap items-center justify-between gap-4">
+        <div className="flex items-center gap-4"><img src={telkomLogo} alt="Telkom University" className="w-16 h-auto" /><div><h1 className="text-2xl font-bold">Admin Dashboard</h1><p className="text-sm">{user.name}</p></div></div>
+        <button onClick={onLogout} className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/20 focus-visible:outline-2 focus-visible:outline-white"><LogOut className="w-4 h-4" /> Logout</button>
+      </div>
+    </header>
+    <div className="px-4 sm:px-8 py-6 max-w-5xl mx-auto space-y-4">
+      <AdminRequestsPanel {...panel} />
+      <button type="button" onClick={onBrowse} className="px-5 py-3 rounded-xl bg-[#BE1E2D] text-white font-semibold focus-visible:outline-2 focus-visible:outline-[#BE1E2D]">Lihat Katalog Database</button>
+    </div>
+  </div>;
+}
+
+export function AdminDashboard({ user, onLogout, loanRequests, onUpdateLoan, items, onUpdateItems, readOnly, onBrowse, overview, onRetryOverview }: AdminDashboardProps) {
   const [viewMode, setViewMode] = useState<ViewMode>('approval');
   const [activeTab, setActiveTab] = useState<TabType>('pending');
   const [searchQuery, setSearchQuery] = useState('');
@@ -37,6 +61,8 @@ export function AdminDashboard({ user, onLogout, loanRequests, onUpdateLoan, ite
     condition: '',
     imageUrl: ''
   });
+
+  if (readOnly) return <ReadOnlyAdminDashboard user={user} onLogout={onLogout} onBrowse={onBrowse} source={overview} onRetry={onRetryOverview} />;
 
   // Stats calculation
   const stats = {
